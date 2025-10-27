@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+option csharp_namespace = "ProductService.Protos";
+
+package product;
+
+// Product Service - handles compliment catalog operations
+service ProductService {
+  // Get a single product by ID
+  rpc GetProduct (GetProductRequest) returns (ProductResponse);
+
+  // List all products with optional category filter
+  rpc ListProducts (ListProductsRequest) returns (ListProductsResponse);
+
+  // Create a new product
+  rpc CreateProduct (CreateProductRequest) returns (ProductResponse);
+
+  // Update an existing product
+  rpc UpdateProduct (UpdateProductRequest) returns (ProductResponse);
+
+  // Delete a product
+  rpc DeleteProduct (DeleteProductRequest) returns (DeleteProductResponse);
+
+  // Get product as JSON-LD (Schema.org format)
+  rpc GetProductJsonLd (GetProductRequest) returns (ProductJsonLdResponse);
+}
+
+// Request/Response messages
+message GetProductRequest {
+  int32 id = 1;
+}
+
+message ListProductsRequest {
+  string category = 1; // Optional filter by category
+  int32 page = 2; // Pagination page number (default: 1)
+  int32 page_size = 3; // Items per page (default: 20)
+}
+
+message CreateProductRequest {
+  string name = 1;
+  string description = 2;
+  string category = 3;
+  double price = 4;
+  string currency = 5; // Default: USD
+  bool is_available = 6;
+}
+
+message UpdateProductRequest {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string category = 4;
+  double price = 5;
+  string currency = 6;
+  bool is_available = 7;
+}
+
+message DeleteProductRequest {
+  int32 id = 1;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ProductResponse {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  string category = 4;
+  double price = 5;
+  string currency = 6;
+  bool is_available = 7;
+  string created_at = 8;
+  string updated_at = 9;
+}
+
+message ListProductsResponse {
+  repeated ProductResponse products = 1;
+  int32 total_count = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ProductJsonLdResponse {
+  string json_ld = 1; // JSON-LD formatted string
+}
