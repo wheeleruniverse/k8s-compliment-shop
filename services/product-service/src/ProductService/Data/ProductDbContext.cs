@@ -29,8 +29,10 @@ public class ProductDbContext : DbContext
             entity.Property(e => e.Price).HasPrecision(10, 2);
             entity.Property(e => e.Currency).HasMaxLength(10);
             entity.Property(e => e.IsAvailable).HasDefaultValue(true);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
+
+            // Timestamps are handled by the application layer (not database defaults)
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt).IsRequired();
 
             // Index for category filtering
             entity.HasIndex(e => e.Category);

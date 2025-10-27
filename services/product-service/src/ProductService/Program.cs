@@ -5,6 +5,22 @@ using ProductService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel with separate endpoints for HTTP/1.1 and HTTP/2
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // HTTP/1.1 endpoint for health checks and web requests
+    options.ListenAnyIP(8080, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1;
+    });
+
+    // HTTP/2 endpoint for gRPC
+    options.ListenAnyIP(8081, listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2;
+    });
+});
+
 // Add services to the container
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
@@ -25,18 +41,18 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Apply migrations and ensure database is created
+// Ensure database is created and seeded
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<ProductDbContext>();
     try
     {
-        dbContext.Database.Migrate();
-        app.Logger.LogInformation("Database migrations applied successfully");
+        dbContext.Database.EnsureCreated();
+        app.Logger.LogInformation("Database created and seeded successfully");
     }
     catch (Exception ex)
     {
-        app.Logger.LogError(ex, "Error applying database migrations");
+        app.Logger.LogError(ex, "Error creating database");
     }
 }
 
