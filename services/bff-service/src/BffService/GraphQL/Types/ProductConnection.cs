@@ -6,10 +6,10 @@ namespace BffService.GraphQL.Types;
 /// </summary>
 public class ProductConnection
 {
-    public IReadOnlyList<Product> Items { get; set; } = Array.Empty<Product>();
-    public int TotalCount { get; set; }
-    public int Page { get; set; }
-    public int PageSize { get; set; }
+    public IReadOnlyList<Product> Items { get; init; } = [];
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
 
     /// <summary>
     /// Maps gRPC ListProductsResponse to GraphQL ProductConnection
