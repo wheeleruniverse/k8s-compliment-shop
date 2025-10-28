@@ -39,7 +39,7 @@ public class ProductDbContext : DbContext
         SeedInitialData(modelBuilder);
     }
 
-    private void SeedInitialData(ModelBuilder modelBuilder)
+    private static void SeedInitialData(ModelBuilder modelBuilder)
     {
         var now = DateTime.UtcNow;
 
