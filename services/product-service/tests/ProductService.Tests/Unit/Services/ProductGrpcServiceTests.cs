@@ -86,8 +86,8 @@ public class ProductGrpcServiceTests
             new() { Id = 2, Name = "Product 2", Description = "Desc 2", Category = "Cat2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
         };
 
-        _mockRepository.Setup(r => r.GetAllAsync(null, 1, 20)).ReturnsAsync(products);
-        _mockRepository.Setup(r => r.GetTotalCountAsync(null)).ReturnsAsync(2);
+        _mockRepository.Setup(r => r.GetAllAsync("", 1, 20)).ReturnsAsync(products);
+        _mockRepository.Setup(r => r.GetTotalCountAsync("")).ReturnsAsync(2);
 
         var request = new ListProductsRequest();
         var context = TestServerCallContext.Create();
@@ -136,8 +136,8 @@ public class ProductGrpcServiceTests
             new() { Id = 3, Name = "Product 3", Description = "Desc 3", Category = "Cat3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
         };
 
-        _mockRepository.Setup(r => r.GetAllAsync(null, 2, 5)).ReturnsAsync(products);
-        _mockRepository.Setup(r => r.GetTotalCountAsync(null)).ReturnsAsync(10);
+        _mockRepository.Setup(r => r.GetAllAsync("", 2, 5)).ReturnsAsync(products);
+        _mockRepository.Setup(r => r.GetTotalCountAsync("")).ReturnsAsync(10);
 
         var request = new ListProductsRequest { Page = 2, PageSize = 5 };
         var context = TestServerCallContext.Create();
@@ -156,8 +156,8 @@ public class ProductGrpcServiceTests
     {
         // Arrange
         var products = new List<Product>();
-        _mockRepository.Setup(r => r.GetAllAsync(null, 1, 20)).ReturnsAsync(products);
-        _mockRepository.Setup(r => r.GetTotalCountAsync(null)).ReturnsAsync(0);
+        _mockRepository.Setup(r => r.GetAllAsync("", 1, 20)).ReturnsAsync(products);
+        _mockRepository.Setup(r => r.GetTotalCountAsync("")).ReturnsAsync(0);
 
         var request = new ListProductsRequest { Page = 0 };
         var context = TestServerCallContext.Create();

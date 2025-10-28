@@ -37,31 +37,14 @@ public class ProductRepositoryTests : IDisposable
         result.Category.Should().Be("Appearance");
     }
 
-    [Fact]
-    public async Task GetByIdAsync_WithInvalidId_ShouldReturnNull()
+    [Theory]
+    [InlineData(999)]  // Non-existent ID
+    [InlineData(0)]    // Zero ID
+    [InlineData(-1)]   // Negative ID
+    public async Task GetByIdAsync_WithInvalidId_ShouldReturnNull(int invalidId)
     {
         // Act
-        var result = await _repository.GetByIdAsync(999);
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_WithZeroId_ShouldReturnNull()
-    {
-        // Act
-        var result = await _repository.GetByIdAsync(0);
-
-        // Assert
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task GetByIdAsync_WithNegativeId_ShouldReturnNull()
-    {
-        // Act
-        var result = await _repository.GetByIdAsync(-1);
+        var result = await _repository.GetByIdAsync(invalidId);
 
         // Assert
         result.Should().BeNull();
