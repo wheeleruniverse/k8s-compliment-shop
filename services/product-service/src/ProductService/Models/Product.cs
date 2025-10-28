@@ -24,14 +24,6 @@ public class Product
     [MaxLength(100)]
     public string Category { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(10,2)")]
-    public decimal Price { get; set; }
-
-    [MaxLength(10)]
-    public string Currency { get; set; } = "USD";
-
-    public bool IsAvailable { get; set; } = true;
-
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -57,11 +49,9 @@ public class Product
             Offers = new OfferJsonLd
             {
                 Type = "Offer",
-                Price = Price.ToString("F2"),
-                PriceCurrency = Currency,
-                Availability = IsAvailable
-                    ? "https://schema.org/InStock"
-                    : "https://schema.org/OutOfStock"
+                Price = "0.00",
+                PriceCurrency = "USD",
+                Availability = "https://schema.org/InStock"
             }
         };
     }

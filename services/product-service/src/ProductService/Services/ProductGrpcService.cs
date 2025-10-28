@@ -9,22 +9,14 @@ namespace ProductService.Services;
 /// <summary>
 /// gRPC service implementation for Product operations
 /// </summary>
-public class ProductGrpcService : Protos.ProductService.ProductServiceBase
+public class ProductGrpcService(IProductRepository repository, ILogger<ProductGrpcService> logger)
+    : Protos.ProductService.ProductServiceBase
 {
-    private readonly IProductRepository _repository;
-    private readonly ILogger<ProductGrpcService> _logger;
-
-    public ProductGrpcService(IProductRepository repository, ILogger<ProductGrpcService> logger)
-    {
-        _repository = repository;
-        _logger = logger;
-    }
-
     public override async Task<ProductResponse> GetProduct(GetProductRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("GetProduct called for ID: {ProductId}", request.Id);
+        logger.LogInformation("GetProduct called for ID: {ProductId}", request.Id);
 
-        var product = await _repository.GetByIdAsync(request.Id);
+        var product = await repository.GetByIdAsync(request.Id);
 
         if (product == null)
         {
@@ -39,11 +31,11 @@ public class ProductGrpcService : Protos.ProductService.ProductServiceBase
         var page = request.Page > 0 ? request.Page : 1;
         var pageSize = request.PageSize > 0 ? request.PageSize : 20;
 
-        _logger.LogInformation("ListProducts called - Category: {Category}, Page: {Page}, PageSize: {PageSize}",
+        logger.LogInformation("ListProducts called - Category: {Category}, Page: {Page}, PageSize: {PageSize}",
             request.Category ?? "All", page, pageSize);
 
-        var products = await _repository.GetAllAsync(request.Category, page, pageSize);
-        var totalCount = await _repository.GetTotalCountAsync(request.Category);
+        var products = await repository.GetAllAsync(request.Category, page, pageSize);
+        var totalCount = await repository.GetTotalCountAsync(request.Category);
 
         var response = new ListProductsResponse
         {
@@ -59,28 +51,25 @@ public class ProductGrpcService : Protos.ProductService.ProductServiceBase
 
     public override async Task<ProductResponse> CreateProduct(CreateProductRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("CreateProduct called - Name: {Name}", request.Name);
+        logger.LogInformation("CreateProduct called - Name: {Name}", request.Name);
 
         var product = new Product
         {
             Name = request.Name,
             Description = request.Description,
-            Category = request.Category,
-            Price = (decimal)request.Price,
-            Currency = string.IsNullOrWhiteSpace(request.Currency) ? "USD" : request.Currency,
-            IsAvailable = request.IsAvailable
+            Category = request.Category
         };
 
-        var created = await _repository.CreateAsync(product);
+        var created = await repository.CreateAsync(product);
 
         return MapToProductResponse(created);
     }
 
     public override async Task<ProductResponse> UpdateProduct(UpdateProductRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("UpdateProduct called for ID: {ProductId}", request.Id);
+        logger.LogInformation("UpdateProduct called for ID: {ProductId}", request.Id);
 
-        var existing = await _repository.GetByIdAsync(request.Id);
+        var existing = await repository.GetByIdAsync(request.Id);
 
         if (existing == null)
         {
@@ -91,20 +80,17 @@ public class ProductGrpcService : Protos.ProductService.ProductServiceBase
         existing.Name = request.Name;
         existing.Description = request.Description;
         existing.Category = request.Category;
-        existing.Price = (decimal)request.Price;
-        existing.Currency = request.Currency;
-        existing.IsAvailable = request.IsAvailable;
 
-        var updated = await _repository.UpdateAsync(existing);
+        var updated = await repository.UpdateAsync(existing);
 
         return MapToProductResponse(updated);
     }
 
     public override async Task<DeleteProductResponse> DeleteProduct(DeleteProductRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("DeleteProduct called for ID: {ProductId}", request.Id);
+        logger.LogInformation("DeleteProduct called for ID: {ProductId}", request.Id);
 
-        var success = await _repository.DeleteAsync(request.Id);
+        var success = await repository.DeleteAsync(request.Id);
 
         return new DeleteProductResponse
         {
@@ -117,9 +103,9 @@ public class ProductGrpcService : Protos.ProductService.ProductServiceBase
 
     public override async Task<ProductJsonLdResponse> GetProductJsonLd(GetProductRequest request, ServerCallContext context)
     {
-        _logger.LogInformation("GetProductJsonLd called for ID: {ProductId}", request.Id);
+        logger.LogInformation("GetProductJsonLd called for ID: {ProductId}", request.Id);
 
-        var product = await _repository.GetByIdAsync(request.Id);
+        var product = await repository.GetByIdAsync(request.Id);
 
         if (product == null)
         {
@@ -147,9 +133,6 @@ public class ProductGrpcService : Protos.ProductService.ProductServiceBase
             Name = product.Name,
             Description = product.Description,
             Category = product.Category,
-            Price = (double)product.Price,
-            Currency = product.Currency,
-            IsAvailable = product.IsAvailable,
             CreatedAt = product.CreatedAt.ToString("O"),
             UpdatedAt = product.UpdatedAt.ToString("O")
         };

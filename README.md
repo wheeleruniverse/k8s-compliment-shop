@@ -62,6 +62,8 @@ k8s-compliment-shop/
 ├── services/
 │   ├── product-service/      ✅ COMPLETED
 │   │   ├── src/ProductService/
+│   │   ├── tests/ProductService.Tests/
+│   │   ├── scripts/          (Helper scripts)
 │   │   ├── k8s/
 │   │   ├── Dockerfile
 │   │   └── ProductService.sln
@@ -72,6 +74,9 @@ k8s-compliment-shop/
 ├── infrastructure/
 │   ├── mysql/                 🔲 TODO (StatefulSet)
 │   └── kafka/                 🔲 TODO (with Zookeeper)
+├── docs/                      ✅ Documentation
+│   ├── DOTNET_FOR_JAVA_DEVS.md
+│   └── CHEATSHEET.md
 └── README.md
 ```
 
@@ -97,6 +102,23 @@ Each service is **completely isolated** with its own solution file:
 - **Synchronous**: gRPC for request/response (BFF → Services)
 - **Asynchronous**: Kafka for events (Order creation → Fulfillment)
 - **External**: HTTP/REST for web browser → BFF
+
+## Documentation
+
+📚 **New to .NET from Java?** Check out our comprehensive guides:
+
+- **[.NET for Java Developers](docs/DOTNET_FOR_JAVA_DEVS.md)** - Complete comparison guide
+  - Project GUIDs explained (those random alphanumeric strings!)
+  - Maven → dotnet CLI mapping
+  - JPA → Entity Framework Core
+  - JUnit → xUnit
+  - Common patterns and gotchas
+
+- **[.NET CLI Cheat Sheet](docs/CHEATSHEET.md)** - Quick command reference
+  - All dotnet commands with Maven equivalents
+  - Testing, building, publishing workflows
+  - Entity Framework migrations
+  - Helper scripts usage
 
 ## Getting Started
 

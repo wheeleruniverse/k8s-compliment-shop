@@ -76,11 +76,8 @@ The service uses a single `Products` table with the following schema:
 - `Name` (varchar 200, required)
 - `Description` (varchar 1000, required)
 - `Category` (varchar 100, required, indexed)
-- `Price` (decimal 10,2)
-- `Currency` (varchar 10, default: USD)
-- `IsAvailable` (boolean, default: true)
-- `CreatedAt` (datetime, auto-generated)
-- `UpdatedAt` (datetime, auto-updated)
+- `CreatedAt` (datetime)
+- `UpdatedAt` (datetime)
 
 ## Development
 

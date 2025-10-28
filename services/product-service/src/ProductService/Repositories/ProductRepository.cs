@@ -20,25 +20,18 @@ public interface IProductRepository
 /// <summary>
 /// Repository implementation for product CRUD operations
 /// </summary>
-public class ProductRepository : IProductRepository
+public class ProductRepository(ProductDbContext context) : IProductRepository
 {
-    private readonly ProductDbContext _context;
-
-    public ProductRepository(ProductDbContext context)
-    {
-        _context = context;
-    }
-
     public async Task<Product?> GetByIdAsync(int id)
     {
-        return await _context.Products
+        return await context.Products
             .AsNoTracking()
             .FirstOrDefaultAsync(p => p.Id == id);
     }
 
     public async Task<List<Product>> GetAllAsync(string? category = null, int page = 1, int pageSize = 20)
     {
-        var query = _context.Products.AsNoTracking();
+        var query = context.Products.AsNoTracking();
 
         // Filter by category if provided
         if (!string.IsNullOrWhiteSpace(category))
@@ -58,7 +51,7 @@ public class ProductRepository : IProductRepository
 
     public async Task<int> GetTotalCountAsync(string? category = null)
     {
-        var query = _context.Products.AsQueryable();
+        var query = context.Products.AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(category))
         {
@@ -73,8 +66,8 @@ public class ProductRepository : IProductRepository
         product.CreatedAt = DateTime.UtcNow;
         product.UpdatedAt = DateTime.UtcNow;
 
-        _context.Products.Add(product);
-        await _context.SaveChangesAsync();
+        context.Products.Add(product);
+        await context.SaveChangesAsync();
 
         return product;
     }
@@ -83,22 +76,22 @@ public class ProductRepository : IProductRepository
     {
         product.UpdatedAt = DateTime.UtcNow;
 
-        _context.Products.Update(product);
-        await _context.SaveChangesAsync();
+        context.Products.Update(product);
+        await context.SaveChangesAsync();
 
         return product;
     }
 
     public async Task<bool> DeleteAsync(int id)
     {
-        var product = await _context.Products.FindAsync(id);
+        var product = await context.Products.FindAsync(id);
         if (product == null)
         {
             return false;
         }
 
-        _context.Products.Remove(product);
-        await _context.SaveChangesAsync();
+        context.Products.Remove(product);
+        await context.SaveChangesAsync();
 
         return true;
     }
