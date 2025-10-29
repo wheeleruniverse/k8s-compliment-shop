@@ -6,6 +6,7 @@ namespace ProductService.Tests.Unit.Models;
 
 public class ProductTests
 {
+    private const string TestBaseUrl = "https://example.com";
     [Fact]
     public void ToJsonLd_ShouldReturnValidSchemaOrgProduct()
     {
@@ -65,13 +66,12 @@ public class ProductTests
             Description = "A test description",
             Category = "Test Category"
         };
-        var baseUrl = "https://example.com";
 
         // Act
-        var result = product.ToJsonLd(baseUrl);
+        var result = product.ToJsonLd(TestBaseUrl);
 
         // Assert
-        result.Url.Should().Be("https://example.com/products/42");
+        result.Url.Should().Be($"{TestBaseUrl}/products/42");
     }
 
     [Fact]

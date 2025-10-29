@@ -6,13 +6,8 @@ namespace ProductService.Data;
 /// <summary>
 /// Database context for product catalog
 /// </summary>
-public class ProductDbContext : DbContext
+public class ProductDbContext(DbContextOptions<ProductDbContext> options) : DbContext(options)
 {
-    public ProductDbContext(DbContextOptions<ProductDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<Product> Products { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

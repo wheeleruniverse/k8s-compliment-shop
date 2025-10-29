@@ -13,14 +13,13 @@ namespace ProductService.Tests.Unit.Services;
 public class ProductGrpcServiceTests
 {
     private readonly Mock<IProductRepository> _mockRepository;
-    private readonly Mock<ILogger<ProductGrpcService>> _mockLogger;
     private readonly ProductGrpcService _service;
 
     public ProductGrpcServiceTests()
     {
         _mockRepository = new Mock<IProductRepository>();
-        _mockLogger = new Mock<ILogger<ProductGrpcService>>();
-        _service = new ProductGrpcService(_mockRepository.Object, _mockLogger.Object);
+        var mockLogger = new Mock<ILogger<ProductGrpcService>>();
+        _service = new ProductGrpcService(_mockRepository.Object, mockLogger.Object);
     }
 
     #region GetProduct Tests
@@ -80,11 +79,11 @@ public class ProductGrpcServiceTests
     public async Task ListProducts_WithoutFilter_ShouldReturnAllProducts()
     {
         // Arrange
-        var products = new List<Product>
-        {
+        List<Product> products =
+        [
             new() { Id = 1, Name = "Product 1", Description = "Desc 1", Category = "Cat1", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
             new() { Id = 2, Name = "Product 2", Description = "Desc 2", Category = "Cat2", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
-        };
+        ];
 
         _mockRepository.Setup(r => r.GetAllAsync("", 1, 20)).ReturnsAsync(products);
         _mockRepository.Setup(r => r.GetTotalCountAsync("")).ReturnsAsync(2);
@@ -107,10 +106,10 @@ public class ProductGrpcServiceTests
     public async Task ListProducts_WithCategoryFilter_ShouldReturnFilteredProducts()
     {
         // Arrange
-        var products = new List<Product>
-        {
+        List<Product> products =
+        [
             new() { Id = 1, Name = "Product 1", Description = "Desc 1", Category = "Appearance", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
-        };
+        ];
 
         _mockRepository.Setup(r => r.GetAllAsync("Appearance", 1, 20)).ReturnsAsync(products);
         _mockRepository.Setup(r => r.GetTotalCountAsync("Appearance")).ReturnsAsync(1);
@@ -131,10 +130,10 @@ public class ProductGrpcServiceTests
     public async Task ListProducts_WithPagination_ShouldReturnCorrectPage()
     {
         // Arrange
-        var products = new List<Product>
-        {
+        List<Product> products =
+        [
             new() { Id = 3, Name = "Product 3", Description = "Desc 3", Category = "Cat3", CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow }
-        };
+        ];
 
         _mockRepository.Setup(r => r.GetAllAsync("", 2, 5)).ReturnsAsync(products);
         _mockRepository.Setup(r => r.GetTotalCountAsync("")).ReturnsAsync(10);
@@ -155,7 +154,7 @@ public class ProductGrpcServiceTests
     public async Task ListProducts_WithInvalidPage_ShouldDefaultToPageOne()
     {
         // Arrange
-        var products = new List<Product>();
+        List<Product> products = [];
         _mockRepository.Setup(r => r.GetAllAsync("", 1, 20)).ReturnsAsync(products);
         _mockRepository.Setup(r => r.GetTotalCountAsync("")).ReturnsAsync(0);
 

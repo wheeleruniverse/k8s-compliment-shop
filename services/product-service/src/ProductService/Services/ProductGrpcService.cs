@@ -113,12 +113,9 @@ public class ProductGrpcService(IProductRepository repository, ILogger<ProductGr
         }
 
         // Convert to JSON-LD format
-        var jsonLd = product.ToJsonLd();
-        var jsonString = JsonConvert.SerializeObject(jsonLd, Formatting.Indented);
-
         return new ProductJsonLdResponse
         {
-            JsonLd = jsonString
+            JsonLd = JsonConvert.SerializeObject(product.ToJsonLd(), Formatting.Indented)
         };
     }
 
