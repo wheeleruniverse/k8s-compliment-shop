@@ -5,17 +5,11 @@ namespace WebService.Services;
 /// <summary>
 /// Service for tracking analytics events with Google Analytics 4
 /// </summary>
-public class AnalyticsService
+public class AnalyticsService(IJSRuntime jsRuntime, IConfiguration configuration)
 {
-    private readonly IJSRuntime _jsRuntime;
-    private readonly IConfiguration _configuration;
-    private bool _initialized = false;
-
-    public AnalyticsService(IJSRuntime jsRuntime, IConfiguration configuration)
-    {
-        _jsRuntime = jsRuntime;
-        _configuration = configuration;
-    }
+    private readonly IJSRuntime _jsRuntime = jsRuntime;
+    private readonly IConfiguration _configuration = configuration;
+    private bool _initialized;
 
     /// <summary>
     /// Initialize Google Analytics with the configured measurement ID

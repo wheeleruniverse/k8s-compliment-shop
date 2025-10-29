@@ -67,7 +67,7 @@ public class ProductCardTests : TestContext
         IGetProducts_Products_Items? clickedProduct = null;
         var cut = RenderComponent<ProductCard>(parameters => parameters
             .Add(p => p.Product, _mockProduct.Object)
-            .Add(p => p.OnProductClick, (product) => { clickedProduct = product; }));
+            .Add(p => p.OnProductClick, product => { clickedProduct = product; }));
 
         // Act
         cut.Find("div.glass-card").Click();

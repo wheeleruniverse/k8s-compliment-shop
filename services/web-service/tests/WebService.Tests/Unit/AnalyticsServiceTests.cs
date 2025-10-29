@@ -9,6 +9,13 @@ namespace WebService.Tests.Unit;
 
 public class AnalyticsServiceTests
 {
+    private const string TestMeasurementId = "G-TEST123456";
+    private const string TestPageTitle = "Home Page";
+    private const string TestPagePath = "/";
+    private const string TestProductName = "Test Product";
+    private const string TestCategory = "TestCategory";
+    private const string TestEventName = "custom_event";
+
     private readonly Mock<IJSRuntime> _mockJsRuntime;
     private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly AnalyticsService _analyticsService;
@@ -24,7 +31,7 @@ public class AnalyticsServiceTests
     public async Task InitializeAsync_WithValidMeasurementId_CallsJavaScriptInitialize()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
+        var measurementId = TestMeasurementId;
         _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
 
         // Act
@@ -76,10 +83,9 @@ public class AnalyticsServiceTests
     public async Task TrackPageViewAsync_CallsJavaScriptWithCorrectParameters()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
-        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
-        var pageTitle = "Home Page";
-        var pagePath = "/";
+        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(TestMeasurementId);
+        var pageTitle = TestPageTitle;
+        var pagePath = TestPagePath;
 
         // Act
         await _analyticsService.TrackPageViewAsync(pageTitle, pagePath);
@@ -99,11 +105,10 @@ public class AnalyticsServiceTests
     public async Task TrackProductViewAsync_CallsJavaScriptWithCorrectParameters()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
-        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
-        var productId = 1;
-        var productName = "Test Product";
-        var productCategory = "TestCategory";
+        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(TestMeasurementId);
+        const int productId = 1;
+        var productName = TestProductName;
+        var productCategory = TestCategory;
 
         // Act
         await _analyticsService.TrackProductViewAsync(productId, productName, productCategory);
@@ -124,9 +129,8 @@ public class AnalyticsServiceTests
     public async Task TrackEventAsync_WithEventNameOnly_CallsJavaScriptCorrectly()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
-        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
-        var eventName = "custom_event";
+        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(TestMeasurementId);
+        var eventName = TestEventName;
 
         // Act
         await _analyticsService.TrackEventAsync(eventName);
@@ -145,9 +149,8 @@ public class AnalyticsServiceTests
     public async Task TrackEventAsync_WithEventParams_CallsJavaScriptWithParameters()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
-        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
-        var eventName = "custom_event";
+        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(TestMeasurementId);
+        var eventName = TestEventName;
         var eventParams = new { param1 = "value1", param2 = 42 };
 
         // Act
@@ -168,10 +171,9 @@ public class AnalyticsServiceTests
     public async Task TrackPageViewAsync_WhenNotInitialized_InitializesFirst()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
-        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
-        var pageTitle = "Home Page";
-        var pagePath = "/";
+        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(TestMeasurementId);
+        var pageTitle = TestPageTitle;
+        var pagePath = TestPagePath;
 
         // Act
         await _analyticsService.TrackPageViewAsync(pageTitle, pagePath);
@@ -194,8 +196,7 @@ public class AnalyticsServiceTests
     public async Task InitializeAsync_CalledMultipleTimes_OnlyInitializesOnce()
     {
         // Arrange
-        var measurementId = "G-TEST123456";
-        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(measurementId);
+        _mockConfiguration.Setup(c => c["GoogleAnalytics:MeasurementId"]).Returns(TestMeasurementId);
 
         // Act
         await _analyticsService.InitializeAsync();

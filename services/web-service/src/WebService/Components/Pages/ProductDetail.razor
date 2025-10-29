@@ -6,12 +6,12 @@
 @inject AnalyticsService Analytics
 @rendermode InteractiveServer
 
-<PageTitle>@(product?.Name ?? "Loading...") - Compliment Shop</PageTitle>
+<PageTitle>@(_product?.Name ?? "Loading...") - Compliment Shop</PageTitle>
 
-@if (!string.IsNullOrEmpty(jsonLd))
+@if (!string.IsNullOrEmpty(_jsonLd))
 {
     <HeadContent>
-        <script type="application/ld+json">@((MarkupString)jsonLd)</script>
+        <script type="application/ld+json">@((MarkupString)_jsonLd)</script>
     </HeadContent>
 }
 
@@ -22,7 +22,7 @@
         </button>
     </div>
 
-    @if (loading)
+    @if (_loading)
     {
         <div class="glass-card-lg fade-in">
             <div class="skeleton skeleton-title"></div>
@@ -32,40 +32,40 @@
             <div class="skeleton skeleton-image mt-3"></div>
         </div>
     }
-    else if (error != null)
+    else if (_error != null)
     {
         <div class="glass-panel-lg p-4 fade-in">
             <h3 class="text-subtitle">Unable to load product</h3>
-            <p class="text-body">@error</p>
+            <p class="text-body">@_error</p>
             <button class="btn-primary mt-2" @onclick="LoadProduct">Try Again</button>
         </div>
     }
-    else if (product != null)
+    else if (_product != null)
     {
         <div class="product-detail-card glass-card-lg slide-up">
             <div class="product-header">
-                <span class="badge badge-primary">@product.Category</span>
-                <h1 class="product-title">@product.Name</h1>
+                <span class="badge badge-primary">@_product.Category</span>
+                <h1 class="product-title">@_product.Name</h1>
             </div>
 
             <div class="product-content">
                 <div class="product-description-section">
                     <h2 class="section-title">About this compliment</h2>
-                    <p class="product-description-full">@product.Description</p>
+                    <p class="product-description-full">@_product.Description</p>
                 </div>
 
                 <div class="product-meta">
                     <div class="meta-item">
                         <span class="meta-label">Category</span>
-                        <span class="meta-value">@product.Category</span>
+                        <span class="meta-value">@_product.Category</span>
                     </div>
                     <div class="meta-item">
                         <span class="meta-label">Created</span>
-                        <span class="meta-value">@FormatDate(product.CreatedAt)</span>
+                        <span class="meta-value">@FormatDate(_product.CreatedAt)</span>
                     </div>
                     <div class="meta-item">
                         <span class="meta-label">Last Updated</span>
-                        <span class="meta-value">@FormatDate(product.UpdatedAt)</span>
+                        <span class="meta-value">@FormatDate(_product.UpdatedAt)</span>
                     </div>
                 </div>
 
@@ -83,10 +83,10 @@
     [Parameter]
     public int Id { get; set; }
 
-    private IGetProduct_Product? product;
-    private string? jsonLd;
-    private bool loading = true;
-    private string? error;
+    private IGetProduct_Product? _product;
+    private string? _jsonLd;
+    private bool _loading = true;
+    private string? _error;
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,7 +95,7 @@
 
     protected override async Task OnParametersSetAsync()
     {
-        if (product?.Id != Id)
+        if (_product?.Id != Id)
         {
             await LoadProduct();
         }
@@ -105,47 +105,44 @@
     {
         try
         {
-            loading = true;
-            error = null;
+            _loading = true;
+            _error = null;
             StateHasChanged();
 
             var result = await GraphQLClient.GetProduct.ExecuteAsync(Id);
 
-            if (result.Data != null && result.Errors == null)
+            if (result is { Data: not null, Errors: null })
             {
-                product = result.Data.Product;
-                jsonLd = product?.JsonLd;
+                _product = result.Data.Product;
+                _jsonLd = _product?.JsonLd;
 
                 // Track product view
-                if (product != null)
+                if (_product != null)
                 {
-                    await Analytics.TrackProductViewAsync(product.Id, product.Name, product.Category);
+                    await Analytics.TrackProductViewAsync(_product.Id, _product.Name, _product.Category);
                 }
             }
-            else if (result.Errors != null && result.Errors.Count > 0)
+            else if (result.Errors is { Count: > 0 })
             {
-                error = string.Join(", ", result.Errors.Select(e => e.Message));
+                _error = string.Join(", ", result.Errors.Select(e => e.Message));
             }
             else
             {
-                error = "Product not found";
+                _error = "Product not found";
             }
         }
         catch (Exception ex)
         {
-            error = $"Failed to load product: {ex.Message}";
+            _error = $"Failed to load product: {ex.Message}";
         }
         finally
         {
-            loading = false;
+            _loading = false;
             StateHasChanged();
         }
     }
 
-    private void GoBack()
-    {
-        Navigation.NavigateTo("/");
-    }
+    private void GoBack() => Navigation.NavigateTo("/");
 
     private void ShareProduct()
     {
@@ -154,7 +151,7 @@
         Navigation.NavigateTo("/");
     }
 
-    private string FormatDate(string? dateString)
+    private static string FormatDate(string? dateString)
     {
         if (string.IsNullOrEmpty(dateString))
             return "Unknown";

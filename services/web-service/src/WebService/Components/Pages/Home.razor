@@ -14,42 +14,42 @@
         <p class="text-body">Discover our curated collection of heartfelt compliments</p>
 
         <div class="filter-section mt-3">
-            <button class="btn-glass @(selectedCategory == null ? "active" : "")" @onclick="@(() => FilterByCategory(null))">
+            <button class="btn-glass @(_selectedCategory == null ? "active" : "")" @onclick="@(() => FilterByCategory(null))">
                 All
             </button>
-            <button class="btn-glass @(selectedCategory == "Appearance" ? "active" : "")" @onclick="@(() => FilterByCategory("Appearance"))">
+            <button class="btn-glass @(_selectedCategory == "Appearance" ? "active" : "")" @onclick="@(() => FilterByCategory("Appearance"))">
                 Appearance
             </button>
-            <button class="btn-glass @(selectedCategory == "Professional" ? "active" : "")" @onclick="@(() => FilterByCategory("Professional"))">
+            <button class="btn-glass @(_selectedCategory == "Professional" ? "active" : "")" @onclick="@(() => FilterByCategory("Professional"))">
                 Professional
             </button>
-            <button class="btn-glass @(selectedCategory == "Personal" ? "active" : "")" @onclick="@(() => FilterByCategory("Personal"))">
+            <button class="btn-glass @(_selectedCategory == "Personal" ? "active" : "")" @onclick="@(() => FilterByCategory("Personal"))">
                 Personal
             </button>
         </div>
     </div>
 
-    @if (loading)
+    @if (_loading)
     {
         <div class="product-grid">
-            @for (int i = 0; i < 6; i++)
+            @for (var i = 0; i < 6; i++)
             {
                 <SkeletonLoader />
             }
         </div>
     }
-    else if (error != null)
+    else if (_error != null)
     {
         <div class="glass-panel-lg mt-4 p-4 fade-in">
             <h3 class="text-subtitle">Unable to load products</h3>
-            <p class="text-body">@error</p>
+            <p class="text-body">@_error</p>
             <button class="btn-primary mt-2" @onclick="LoadProducts">Try Again</button>
         </div>
     }
-    else if (products != null && products.Any())
+    else if (_products != null && _products.Any())
     {
         <div class="product-grid">
-            @foreach (var product in products)
+            @foreach (var product in _products)
             {
                 <ProductCard Product="product" OnProductClick="NavigateToProduct" />
             }
@@ -65,10 +65,10 @@
 </div>
 
 @code {
-    private IReadOnlyList<IGetProducts_Products_Items>? products;
-    private bool loading = true;
-    private string? error;
-    private string? selectedCategory;
+    private IReadOnlyList<IGetProducts_Products_Items>? _products;
+    private bool _loading = true;
+    private string? _error;
+    private string? _selectedCategory;
 
     protected override async Task OnInitializedAsync()
     {
@@ -80,35 +80,35 @@
     {
         try
         {
-            loading = true;
-            error = null;
+            _loading = true;
+            _error = null;
             StateHasChanged();
 
-            var result = await GraphQLClient.GetProducts.ExecuteAsync(selectedCategory, null, null);
+            var result = await GraphQLClient.GetProducts.ExecuteAsync(_selectedCategory, null, null);
 
-            if (result.Data != null && result.Errors == null)
+            if (result is { Data: not null, Errors: null })
             {
-                products = result.Data.Products?.Items;
+                _products = result.Data.Products?.Items;
             }
-            else if (result.Errors != null && result.Errors.Count > 0)
+            else if (result.Errors is { Count: > 0 })
             {
-                error = string.Join(", ", result.Errors.Select(e => e.Message));
+                _error = string.Join(", ", result.Errors.Select(e => e.Message));
             }
         }
         catch (Exception ex)
         {
-            error = $"Failed to load products: {ex.Message}";
+            _error = $"Failed to load products: {ex.Message}";
         }
         finally
         {
-            loading = false;
+            _loading = false;
             StateHasChanged();
         }
     }
 
     private async Task FilterByCategory(string? category)
     {
-        selectedCategory = category;
+        _selectedCategory = category;
         await LoadProducts();
     }
 
