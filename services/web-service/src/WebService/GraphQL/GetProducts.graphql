@@ -1,0 +1,15 @@
+query GetProducts($category: String, $page: Int, $pageSize: Int) {
+  products(category: $category, page: $page, pageSize: $pageSize) {
+    totalCount
+    page
+    pageSize
+    items {
+      id
+      name
+      description
+      category
+      createdAt
+      updatedAt
+    }
+  }
+}

@@ -1,0 +1,282 @@
+@page "/product/{Id:int}"
+@using WebService.GraphQL
+@using WebService.Services
+@inject IComplimentShopClient GraphQLClient
+@inject NavigationManager Navigation
+@inject AnalyticsService Analytics
+@rendermode InteractiveServer
+
+<PageTitle>@(product?.Name ?? "Loading...") - Compliment Shop</PageTitle>
+
+@if (!string.IsNullOrEmpty(jsonLd))
+{
+    <HeadContent>
+        <script type="application/ld+json">@((MarkupString)jsonLd)</script>
+    </HeadContent>
+}
+
+<div class="container">
+    <div class="back-button-section mb-3">
+        <button class="btn-glass" @onclick="GoBack">
+            ← Back to Products
+        </button>
+    </div>
+
+    @if (loading)
+    {
+        <div class="glass-card-lg fade-in">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text" style="width: 80%;"></div>
+            <div class="skeleton skeleton-image mt-3"></div>
+        </div>
+    }
+    else if (error != null)
+    {
+        <div class="glass-panel-lg p-4 fade-in">
+            <h3 class="text-subtitle">Unable to load product</h3>
+            <p class="text-body">@error</p>
+            <button class="btn-primary mt-2" @onclick="LoadProduct">Try Again</button>
+        </div>
+    }
+    else if (product != null)
+    {
+        <div class="product-detail-card glass-card-lg slide-up">
+            <div class="product-header">
+                <span class="badge badge-primary">@product.Category</span>
+                <h1 class="product-title">@product.Name</h1>
+            </div>
+
+            <div class="product-content">
+                <div class="product-description-section">
+                    <h2 class="section-title">About this compliment</h2>
+                    <p class="product-description-full">@product.Description</p>
+                </div>
+
+                <div class="product-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Category</span>
+                        <span class="meta-value">@product.Category</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Created</span>
+                        <span class="meta-value">@FormatDate(product.CreatedAt)</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Last Updated</span>
+                        <span class="meta-value">@FormatDate(product.UpdatedAt)</span>
+                    </div>
+                </div>
+
+                <div class="action-section">
+                    <button class="btn-primary btn-large" @onclick="ShareProduct">
+                        Share this compliment
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private IGetProduct_Product? product;
+    private string? jsonLd;
+    private bool loading = true;
+    private string? error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProduct();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (product?.Id != Id)
+        {
+            await LoadProduct();
+        }
+    }
+
+    private async Task LoadProduct()
+    {
+        try
+        {
+            loading = true;
+            error = null;
+            StateHasChanged();
+
+            var result = await GraphQLClient.GetProduct.ExecuteAsync(Id);
+
+            if (result.Data != null && result.Errors == null)
+            {
+                product = result.Data.Product;
+                jsonLd = product?.JsonLd;
+
+                // Track product view
+                if (product != null)
+                {
+                    await Analytics.TrackProductViewAsync(product.Id, product.Name, product.Category);
+                }
+            }
+            else if (result.Errors != null && result.Errors.Count > 0)
+            {
+                error = string.Join(", ", result.Errors.Select(e => e.Message));
+            }
+            else
+            {
+                error = "Product not found";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"Failed to load product: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private void ShareProduct()
+    {
+        // In a real app, this would open a share dialog
+        // For now, just show an alert (would need JS interop)
+        Navigation.NavigateTo("/");
+    }
+
+    private string FormatDate(string? dateString)
+    {
+        if (string.IsNullOrEmpty(dateString))
+            return "Unknown";
+
+        if (DateTime.TryParse(dateString, out var date))
+        {
+            return date.ToString("MMMM dd, yyyy");
+        }
+
+        return dateString;
+    }
+}
+
+<style>
+    .back-button-section {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .glass-card-lg {
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--blur-amount));
+        -webkit-backdrop-filter: blur(var(--blur-amount));
+        border: 1px solid var(--glass-border);
+        border-radius: var(--border-radius-lg);
+        padding: 3rem;
+        box-shadow: var(--shadow-xl);
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .product-header {
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 1.5rem;
+    }
+
+    .product-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-top: 1rem;
+        margin-bottom: 0;
+    }
+
+    .product-content {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .product-description-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin: 0;
+    }
+
+    .product-description-full {
+        font-size: 1.125rem;
+        line-height: 1.8;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .product-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.4);
+        border-radius: var(--border-radius-md);
+        border: 1px solid var(--glass-border);
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .meta-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .meta-value {
+        font-size: 1rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .action-section {
+        display: flex;
+        justify-content: center;
+        padding-top: 1rem;
+    }
+
+    .btn-large {
+        padding: 1rem 2rem;
+        font-size: 1.125rem;
+    }
+
+    @@media (max-width: 768px) {
+        .glass-card-lg {
+            padding: 2rem 1.5rem;
+        }
+
+        .product-title {
+            font-size: 2rem;
+        }
+
+        .product-meta {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

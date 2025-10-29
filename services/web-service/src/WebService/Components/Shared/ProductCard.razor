@@ -1,0 +1,59 @@
+@* Product card component with glass effect *@
+@using WebService.GraphQL
+
+<div class="glass-card product-card slide-up" @onclick="() => OnProductClick.InvokeAsync(Product)">
+    <div class="product-category">
+        <span class="badge badge-primary">@Product.Category</span>
+    </div>
+    <h3 class="product-name">@Product.Name</h3>
+    <p class="product-description">@Product.Description</p>
+    <div class="product-footer">
+        <span class="text-muted">Click to view details</span>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public IGetProducts_Products_Items Product { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<IGetProducts_Products_Items> OnProductClick { get; set; }
+}
+
+<style>
+    .product-card {
+        cursor: pointer;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .product-category {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .product-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+
+    .product-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+        flex: 1;
+        margin: 0;
+    }
+
+    .product-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.5rem;
+        border-top: 1px solid var(--glass-border);
+    }
+</style>

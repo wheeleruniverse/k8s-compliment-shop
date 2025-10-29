@@ -1,0 +1,13 @@
+{
+  "schema": "GraphQL/schema.graphql",
+  "documents": "GraphQL/**/*.graphql",
+  "extensions": {
+    "strawberryShake": {
+      "name": "ComplimentShopClient",
+      "namespace": "WebService.GraphQL",
+      "url": "http://localhost:8082/graphql",
+      "dependencyInjection": true,
+      "razorComponents": true
+    }
+  }
+}

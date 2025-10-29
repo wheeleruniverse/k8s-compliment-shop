@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-service-config
+  labels:
+    app: web-service
+data:
+  # BFF Service GraphQL endpoint (K8s internal DNS)
+  bff-service-url: "http://bff-service:8082/graphql"
+
+  # Google Analytics 4 Measurement ID
+  # Replace with your actual GA4 measurement ID
+  ga-measurement-id: "G-XXXXXXXXXX"

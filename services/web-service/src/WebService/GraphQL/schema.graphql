@@ -1,0 +1,50 @@
+schema {
+  query: Query
+}
+
+type Query {
+  """
+  Get a single product by ID
+  Returns null if product not found
+  """
+  product(id: Int!): Product
+
+  """
+  List products with optional filtering and pagination
+  """
+  products(
+    category: String
+    page: Int = 1
+    pageSize: Int = 20
+  ): ProductConnection!
+}
+
+"""
+GraphQL Product type
+Represents a compliment product with optional JSON-LD SEO data
+"""
+type Product {
+  id: Int!
+  name: String!
+  description: String!
+  category: String!
+  createdAt: String!
+  updatedAt: String!
+
+  """
+  JSON-LD structured data for SEO
+  This field is optional and only fetched when explicitly requested in the query
+  """
+  jsonLd: String
+}
+
+"""
+GraphQL ProductConnection type for paginated product lists
+Follows the Relay Connection pattern for pagination
+"""
+type ProductConnection {
+  items: [Product!]!
+  totalCount: Int!
+  page: Int!
+  pageSize: Int!
+}
