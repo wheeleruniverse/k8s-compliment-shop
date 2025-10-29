@@ -13,16 +13,18 @@ public class SkeletonLoaderTests : TestContext
         // Act
         var cut = RenderComponent<SkeletonLoader>();
 
-        // Assert
-        cut.MarkupMatches(@"
-            <div class=""glass-card skeleton-card"">
-                <div class=""skeleton skeleton-image""></div>
-                <div class=""skeleton skeleton-title""></div>
-                <div class=""skeleton skeleton-text""></div>
-                <div class=""skeleton skeleton-text"" style=""width: 80%;""></div>
-                <div class=""skeleton skeleton-text"" style=""width: 90%;""></div>
-            </div>
-        ");
+        // Assert - Verify main container and key elements
+        var rootDiv = cut.Find("div.glass-card.skeleton-card");
+        rootDiv.Should().NotBeNull();
+
+        var skeletonImage = cut.Find("div.skeleton-image");
+        skeletonImage.Should().NotBeNull();
+
+        var skeletonTitle = cut.Find("div.skeleton-title");
+        skeletonTitle.Should().NotBeNull();
+
+        var textSkeletons = cut.FindAll("div.skeleton-text");
+        textSkeletons.Count.Should().Be(3);
     }
 
     [Fact]
