@@ -52,11 +52,13 @@ public class ProductQueries
     public async Task<ProductConnection> GetProductsAsync(
         [Service] IProductServiceClient productService,
         string? category = null,
-        int page = 1,
-        int pageSize = 20,
+        int? page = null,
+        int? pageSize = null,
         CancellationToken cancellationToken = default)
     {
-        var response = await productService.ListProductsAsync(category, page, pageSize, cancellationToken);
+        var actualPage = page ?? 1;
+        var actualPageSize = pageSize ?? 20;
+        var response = await productService.ListProductsAsync(category, actualPage, actualPageSize, cancellationToken);
         return ProductConnection.FromGrpcResponse(response);
     }
 }
