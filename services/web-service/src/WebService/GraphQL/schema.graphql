@@ -14,8 +14,8 @@ type Query {
   """
   products(
     category: String
-    page: Int = 1
-    pageSize: Int = 20
+    page: Int
+    pageSize: Int
   ): ProductConnection!
 }
 
