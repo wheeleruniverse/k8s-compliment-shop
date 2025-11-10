@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: bff-service
-        image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/bff-service:v1
+        image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/bff-service:v2
         imagePullPolicy: Always
         ports:
         - containerPort: 8082
