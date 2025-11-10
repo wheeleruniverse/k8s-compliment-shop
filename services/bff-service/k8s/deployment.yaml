@@ -1,44 +1,40 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: product-service
+  name: bff-service
   labels:
-    app: product-service
+    app: bff-service
+    tier: backend
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: product-service
+      app: bff-service
   template:
     metadata:
       labels:
-        app: product-service
+        app: bff-service
+        tier: backend
     spec:
       containers:
-      - name: product-service
-        image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/product-service:v1
+      - name: bff-service
+        image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/bff-service:v1
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 8082
           name: http
-          protocol: TCP
-        - containerPort: 8081
-          name: grpc
           protocol: TCP
         env:
         - name: ASPNETCORE_ENVIRONMENT
           value: "Production"
         - name: ASPNETCORE_URLS
-          value: "http://+:8080"
-        - name: ConnectionStrings__DefaultConnection
-          valueFrom:
-            secretKeyRef:
-              name: mysql-secret
-              key: connection-string
+          value: "http://+:8082"
+        - name: ProductService__Url
+          value: "http://product-service:8081"
         livenessProbe:
           httpGet:
             path: /health
-            port: 8080
+            port: 8082
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -46,7 +42,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8080
+            port: 8082
           initialDelaySeconds: 10
           periodSeconds: 5
           timeoutSeconds: 3
