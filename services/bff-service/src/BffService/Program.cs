@@ -42,7 +42,7 @@ builder.Services.AddSingleton<IProductServiceClient, ProductServiceClient>();
 // Configure GraphQL server with HotChocolate
 builder.Services
     .AddGraphQLServer()
-    .AddQueryType<ProductQueries>()
+    .AddQueryType<ProductQueries>(d => d.Name("Query"))
     .AddTypeExtension<ProductFieldResolvers>()
     // Enable GraphQL Playground in development
     .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = builder.Environment.IsDevelopment());
