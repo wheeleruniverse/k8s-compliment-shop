@@ -1,0 +1,42 @@
+{{- if .Values.bffService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.bffService.name }}
+  labels:
+    {{- include "k8s-compliment-shop.bffService.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.bffService.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.bffService.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.bffService.name }}
+        {{- with .Values.bffService.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+      - name: {{ .Values.bffService.name }}
+        image: "{{ .Values.bffService.image.repository }}:{{ .Values.bffService.image.tag }}"
+        imagePullPolicy: {{ .Values.bffService.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.bffService.service.targetPort }}
+          name: http
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: {{ .Values.bffService.env.aspnetcoreEnvironment | quote }}
+        - name: ASPNETCORE_URLS
+          value: {{ .Values.bffService.env.aspnetcoreUrls | quote }}
+        - name: ProductService__Url
+          value: {{ .Values.bffService.env.productServiceUrl | quote }}
+        livenessProbe:
+          {{- toYaml .Values.bffService.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.bffService.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.bffService.resources | nindent 10 }}
+{{- end }}

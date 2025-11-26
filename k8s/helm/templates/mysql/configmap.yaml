@@ -1,0 +1,11 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+  labels:
+    {{- include "k8s-compliment-shop.mysql.labels" . | nindent 4 }}
+data:
+  my.cnf: |
+{{- .Values.mysql.config.mycnf | nindent 4 }}
+{{- end }}

@@ -1,0 +1,17 @@
+{{- if .Values.bffService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.bffService.name }}
+  labels:
+    {{- include "k8s-compliment-shop.bffService.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.bffService.service.type }}
+  ports:
+  - port: {{ .Values.bffService.service.port }}
+    targetPort: {{ .Values.bffService.service.targetPort }}
+    protocol: TCP
+    name: http
+  selector:
+    app: {{ .Values.bffService.name }}
+{{- end }}

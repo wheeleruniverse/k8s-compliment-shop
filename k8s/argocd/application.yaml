@@ -1,0 +1,92 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k8s-compliment-shop
+  namespace: argocd
+  # Finalizer ensures cascade deletion of resources when app is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Project the application belongs to
+  project: default
+
+  # Source repository configuration
+  source:
+    # Git repository URL (update with your actual repository)
+    repoURL: https://github.com/your-org/k8s-compliment-shop.git
+    targetRevision: main
+    path: k8s/helm
+
+    # Helm-specific configuration
+    helm:
+      # Release name
+      releaseName: k8s-compliment-shop
+
+      # Values files to use (in order of precedence)
+      valueFiles:
+        - values.yaml
+
+      # Inline values (highest precedence) - use for environment-specific overrides
+      # values: |
+      #   webService:
+      #     image:
+      #       tag: v7
+
+      # Kustomize post-rendering configuration
+      # This runs kustomize after helm template to apply patches
+      # NOTE: ArgoCD uses a different approach than the shell script
+      kustomize:
+        # Path to kustomization.yaml relative to the helm chart
+        path: kustomize
+
+  # Destination cluster and namespace
+  destination:
+    # In-cluster server (use https://kubernetes.default.svc for same cluster as ArgoCD)
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  # Sync policy configuration
+  syncPolicy:
+    # Automated sync configuration
+    automated:
+      # Automatically sync when git changes are detected
+      prune: true
+      # Automatically sync when cluster state deviates from git
+      selfHeal: true
+      # Allow empty resources (useful during initial setup)
+      allowEmpty: false
+
+    # Sync options
+    syncOptions:
+      # Create namespace if it doesn't exist
+      - CreateNamespace=true
+      # Validate resources before applying
+      - Validate=true
+      # Use server-side apply (recommended for newer K8s versions)
+      # - ServerSideApply=true
+      # Respect ignore differences in annotations
+      - RespectIgnoreDifferences=true
+
+    # Retry configuration for failed syncs
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+  # Ignore differences in certain fields (prevents constant out-of-sync state)
+  ignoreDifferences:
+    # Ignore fields that are modified by K8s or other controllers
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas  # Ignore if using HPA
+    - group: apps
+      kind: StatefulSet
+      jsonPointers:
+        - /spec/volumeClaimTemplates/0/status
+
+  # Health assessment configuration
+  # (ArgoCD has built-in health checks for common resources)
+  # Custom health checks can be added here if needed

@@ -1,0 +1,65 @@
+{{- if .Values.mysql.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.mysql.name }}
+  labels:
+    {{- include "k8s-compliment-shop.mysql.labels" . | nindent 4 }}
+spec:
+  serviceName: mysql-service
+  replicas: {{ .Values.mysql.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.mysql.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.mysql.name }}
+        {{- with .Values.mysql.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+      - name: {{ .Values.mysql.name }}
+        image: "{{ .Values.mysql.image.repository }}:{{ .Values.mysql.image.tag }}"
+        imagePullPolicy: {{ .Values.mysql.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.mysql.service.port }}
+          name: mysql
+          protocol: TCP
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: root-password
+        - name: MYSQL_DATABASE
+          value: {{ .Values.mysql.auth.database | quote }}
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d
+        livenessProbe:
+          {{- toYaml .Values.mysql.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.mysql.readinessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.mysql.resources | nindent 10 }}
+      volumes:
+      - name: mysql-config
+        configMap:
+          name: mysql-config
+  {{- if .Values.mysql.persistence.enabled }}
+  volumeClaimTemplates:
+  - metadata:
+      name: mysql-persistent-storage
+    spec:
+      accessModes:
+      - {{ .Values.mysql.persistence.accessMode }}
+      storageClassName: {{ .Values.mysql.persistence.storageClass }}
+      resources:
+        requests:
+          storage: {{ .Values.mysql.persistence.size }}
+  {{- end }}
+{{- end }}
