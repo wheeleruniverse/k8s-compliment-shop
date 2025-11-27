@@ -238,3 +238,11 @@ $RECYCLE.BIN/
 # Uncomment the line below if you prefer to ignore them:
 # k8s/rendered/
 k8s/helm/kustomize/stdin.yaml
+
+# Kubernetes secrets - NEVER commit production values
+k8s/helm/values.prod.yaml
+k8s/helm/values.*.prod.yaml
+**/values.prod.yaml
+**/secrets.yaml
+# Allow vendored secrets with placeholders
+!k8s/rendered/secrets/secrets.yaml
