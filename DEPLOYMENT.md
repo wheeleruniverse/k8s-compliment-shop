@@ -1,6 +1,26 @@
 # Deployment Guide
 
-This guide explains how to deploy the k8s-compliment-shop application to your Kubernetes cluster using the configured GitHub secrets.
+This guide explains how to deploy the k8s-compliment-shop application to your Kubernetes cluster.
+
+## 🚀 Automated Deployment (Recommended)
+
+**The easiest way to deploy is using the automated GitHub Actions workflow!**
+
+The repository includes a fully automated CI/CD pipeline that:
+1. ✅ Builds Docker images when you push code
+2. ✅ Tags images with commit SHA (immutable, traceable)
+3. ✅ Pushes to GCP Artifact Registry
+4. ✅ Updates Helm values automatically
+5. ✅ Deploys to your Kubernetes cluster
+
+**See:** `.github/workflows/README.md` for complete workflow documentation.
+
+**Quick Start:**
+1. Configure your GKE cluster name in `.github/workflows/build-and-deploy.yaml`
+2. Push code to `main` branch
+3. Workflow automatically builds, pushes, and deploys!
+
+---
 
 ## Prerequisites
 

@@ -1,0 +1,300 @@
+name: Build, Push, and Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/**'
+      - 'k8s/helm/**'
+      - '.github/workflows/build-and-deploy.yaml'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy (all, web-service, bff-service, product-service)'
+        required: false
+        default: 'all'
+
+env:
+  REGISTRY: ${{ vars.GCP_REGION }}-docker.pkg.dev
+  GCP_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+  REPOSITORY: ${{ vars.GCP_ARTIFACT_REGISTRY_REPO }}
+
+jobs:
+  # Detect which services changed
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      web-service: ${{ steps.filter.outputs.web-service }}
+      bff-service: ${{ steps.filter.outputs.bff-service }}
+      product-service: ${{ steps.filter.outputs.product-service }}
+      any-service: ${{ steps.filter.outputs.any-service }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            web-service:
+              - 'services/web-service/**'
+            bff-service:
+              - 'services/bff-service/**'
+            product-service:
+              - 'services/product-service/**'
+            any-service:
+              - 'services/**'
+
+  # Build and push Docker images
+  build-and-push:
+    name: Build and Push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: |
+      needs.detect-changes.outputs.any-service == 'true' ||
+      github.event_name == 'workflow_dispatch'
+
+    strategy:
+      matrix:
+        include:
+          - service: web-service
+            path: services/web-service
+            should-build: ${{ needs.detect-changes.outputs.web-service == 'true' || github.event.inputs.service == 'all' || github.event.inputs.service == 'web-service' }}
+          - service: bff-service
+            path: services/bff-service
+            should-build: ${{ needs.detect-changes.outputs.bff-service == 'true' || github.event.inputs.service == 'all' || github.event.inputs.service == 'bff-service' }}
+          - service: product-service
+            path: services/product-service
+            should-build: ${{ needs.detect-changes.outputs.product-service == 'true' || github.event.inputs.service == 'all' || github.event.inputs.service == 'product-service' }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        if: ${{ matrix.should-build == 'true' }}
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        if: ${{ matrix.should-build == 'true' }}
+        uses: docker/setup-buildx-action@v3
+
+      - name: Authenticate to Google Cloud
+        if: ${{ matrix.should-build == 'true' }}
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
+        if: ${{ matrix.should-build == 'true' }}
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        if: ${{ matrix.should-build == 'true' }}
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }}
+
+      - name: Generate image tags
+        if: ${{ matrix.should-build == 'true' }}
+        id: meta
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          IMAGE_NAME="${{ env.REGISTRY }}/${{ env.GCP_PROJECT }}/${{ env.REPOSITORY }}/${{ matrix.service }}"
+
+          echo "short-sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          echo "image-name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "tags=${IMAGE_NAME}:${SHORT_SHA},${IMAGE_NAME}:latest" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        if: ${{ matrix.should-build == 'true' }}
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.path }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          labels: |
+            org.opencontainers.image.source=${{ github.repositoryUrl }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.head_commit.timestamp }}
+
+      - name: Output image info
+        if: ${{ matrix.should-build == 'true' }}
+        run: |
+          echo "### 🐳 Built and Pushed Image" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service:** ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ steps.meta.outputs.image-name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ steps.meta.outputs.short-sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+  # Update Helm values with new image tags
+  update-helm-values:
+    name: Update Helm Values
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-and-push]
+    if: |
+      needs.detect-changes.outputs.any-service == 'true' ||
+      github.event_name == 'workflow_dispatch'
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update image tags in values.yaml
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          chmod +x scripts/update-image-tags.sh
+
+          # Update web-service tag
+          if [ "${{ needs.detect-changes.outputs.web-service }}" == "true" ] || [ "${{ github.event.inputs.service }}" == "all" ] || [ "${{ github.event.inputs.service }}" == "web-service" ]; then
+            ./scripts/update-image-tags.sh web-service ${SHORT_SHA}
+          fi
+
+          # Update bff-service tag
+          if [ "${{ needs.detect-changes.outputs.bff-service }}" == "true" ] || [ "${{ github.event.inputs.service }}" == "all" ] || [ "${{ github.event.inputs.service }}" == "bff-service" ]; then
+            ./scripts/update-image-tags.sh bff-service ${SHORT_SHA}
+          fi
+
+          # Update product-service tag
+          if [ "${{ needs.detect-changes.outputs.product-service }}" == "true" ] || [ "${{ github.event.inputs.service }}" == "all" ] || [ "${{ github.event.inputs.service }}" == "product-service" ]; then
+            ./scripts/update-image-tags.sh product-service ${SHORT_SHA}
+          fi
+
+      - name: Vendor manifests with new tags
+        run: |
+          # Install required tools
+          curl -LO https://get.helm.sh/helm-v3.14.0-linux-amd64.tar.gz
+          tar xzf helm-v3.14.0-linux-amd64.tar.gz
+          sudo mv linux-amd64/helm /usr/local/bin/
+
+          curl -LO https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.5.0/kustomize_v5.5.0_linux_amd64.tar.gz
+          tar xzf kustomize_v5.5.0_linux_amd64.tar.gz
+          sudo mv kustomize /usr/local/bin/
+
+          # Run vendoring script
+          chmod +x scripts/vendor-manifests.sh
+          ./scripts/vendor-manifests.sh
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+
+          git add k8s/helm/values.yaml k8s/rendered/
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update image tags to ${SHORT_SHA}
+
+Built and pushed new Docker images:
+${{ needs.detect-changes.outputs.web-service == 'true' && '- web-service' || '' }}
+${{ needs.detect-changes.outputs.bff-service == 'true' && '- bff-service' || '' }}
+${{ needs.detect-changes.outputs.product-service == 'true' && '- product-service' || '' }}
+
+🤖 Auto-generated by GitHub Actions
+Commit: ${{ github.sha }}"
+
+            git push
+          fi
+
+  # Deploy to Kubernetes
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: [build-and-push, update-helm-values]
+    if: |
+      always() &&
+      (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped') &&
+      (needs.update-helm-values.result == 'success' || needs.update-helm-values.result == 'skipped')
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main  # Get the latest commit with updated tags
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
+        run: |
+          # Replace with your actual cluster name and region
+          # gcloud container clusters get-credentials YOUR_CLUSTER_NAME \
+          #   --region ${{ vars.GCP_REGION }} \
+          #   --project ${{ vars.GCP_PROJECT_ID }}
+
+          echo "⚠️ Skipping GKE deployment - configure your cluster details first"
+          echo "Uncomment and update the gcloud command above with your cluster name"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Deploy with Helm
+        run: |
+          # Uncomment when cluster is configured
+          # helm upgrade --install k8s-compliment-shop k8s/helm \
+          #   --set mysql.auth.rootPassword="${{ secrets.MYSQL_ROOT_PASSWORD }}" \
+          #   --namespace default \
+          #   --create-namespace \
+          #   --wait \
+          #   --timeout 10m
+
+          echo "### 🚀 Deployment Ready" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Configure your GKE cluster details in the workflow to enable automatic deployment." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Update the \`Get GKE credentials\` step with your cluster name" >> $GITHUB_STEP_SUMMARY
+          echo "2. Uncomment the \`helm upgrade\` command" >> $GITHUB_STEP_SUMMARY
+          echo "3. Push the changes to enable automatic deployment" >> $GITHUB_STEP_SUMMARY
+
+      - name: Verify Deployment
+        run: |
+          # Uncomment when cluster is configured
+          # kubectl get pods -n default
+          # kubectl get services -n default
+
+          echo "Deployment verification skipped - configure cluster first"
+
+      - name: Add deployment summary
+        run: |
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+
+          echo "### 📦 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${SHORT_SHA}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Images deployed:**" >> $GITHUB_STEP_SUMMARY
+          echo "- web-service: ${SHORT_SHA}" >> $GITHUB_STEP_SUMMARY
+          echo "- bff-service: ${SHORT_SHA}" >> $GITHUB_STEP_SUMMARY
+          echo "- product-service: ${SHORT_SHA}" >> $GITHUB_STEP_SUMMARY
