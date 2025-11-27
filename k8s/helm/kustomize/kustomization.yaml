@@ -8,9 +8,10 @@ resources:
   - stdin.yaml
 
 # Common labels to add to all resources
-commonLabels:
-  app.kubernetes.io/part-of: k8s-compliment-shop
-  environment: production
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: k8s-compliment-shop
+      environment: production
 
 # Common annotations to add to all resources
 commonAnnotations:
@@ -19,10 +20,10 @@ commonAnnotations:
 
 # Patches can be applied here
 # Example patches are provided in the patches/ directory
-patchesStrategicMerge: []
+patches: []
   # Uncomment to apply example patches:
-  # - patches/add-monitoring-labels.yaml
-  # - patches/security-context.yaml
+  # - path: patches/add-monitoring-labels.yaml
+  # - path: patches/security-context.yaml
 
 # JSON patches for more surgical changes
 # patchesJson6902: []

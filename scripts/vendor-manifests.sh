@@ -31,10 +31,20 @@ rm -rf "$OUTPUT_DIR"/*
 
 # Render Helm templates with Kustomize post-renderer
 echo -e "${YELLOW}Rendering Helm templates with Kustomize post-renderer...${NC}"
+# Render with Helm and pipe through Kustomize manually
+# This approach works around Helm v4 post-renderer issues
+# Use values.public.yaml for safe placeholder secrets
+KUSTOMIZE_DIR="$HELM_CHART_DIR/kustomize"
 helm template "$RELEASE_NAME" "$HELM_CHART_DIR" \
   --namespace "$NAMESPACE" \
-  --post-renderer "$HELM_CHART_DIR/kustomize/post-renderer.sh" \
-  > "$OUTPUT_DIR/all-resources.yaml"
+  --values "$HELM_CHART_DIR/values.public.yaml" \
+  > "$KUSTOMIZE_DIR/stdin.yaml"
+
+# Apply kustomize transformations
+kustomize build "$KUSTOMIZE_DIR" > "$OUTPUT_DIR/all-resources.yaml"
+
+# Clean up temporary file
+rm -f "$KUSTOMIZE_DIR/stdin.yaml"
 
 echo -e "${GREEN}✓ Manifests rendered successfully!${NC}"
 echo -e "${GREEN}✓ Output: $OUTPUT_DIR/all-resources.yaml${NC}"

@@ -230,13 +230,9 @@ mysql:
   readinessProbe:
     exec:
       command:
-        - mysqladmin
-        - ping
-        - -h
-        - localhost
-        - -u
-        - root
-        - --password=yourpassword
+        - sh
+        - -c
+        - mysqladmin ping -h localhost -u root --password=$MYSQL_ROOT_PASSWORD
     initialDelaySeconds: 10
     periodSeconds: 5
     timeoutSeconds: 3

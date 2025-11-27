@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    helm.sh/chart: k8s-compliment-shop
+    managed-by: argocd
+  labels:
+    app: mysql
+    app.kubernetes.io/instance: k8s-compliment-shop
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-compliment-shop
+    app.kubernetes.io/part-of: k8s-compliment-shop
+    app.kubernetes.io/version: 1.0.0
+    environment: production
+    helm.sh/chart: k8s-compliment-shop-1.0.0
+    tier: database
+  name: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  serviceName: mysql-service
+  template:
+    metadata:
+      annotations:
+        helm.sh/chart: k8s-compliment-shop
+        managed-by: argocd
+      labels:
+        app: mysql
+        tier: database
+    spec:
+      containers:
+        - env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: root-password
+                  name: mysql-secret
+            - name: MYSQL_DATABASE
+              value: complimentshop
+          image: mysql:8.0
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - mysqladmin
+                - ping
+                - -h
+                - localhost
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: mysql
+          ports:
+            - containerPort: 3306
+              name: mysql
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - mysqladmin ping -h localhost -u root --password=$MYSQL_ROOT_PASSWORD
+            failureThreshold: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+          volumeMounts:
+            - mountPath: /var/lib/mysql
+              name: mysql-persistent-storage
+            - mountPath: /etc/mysql/conf.d
+              name: mysql-config
+      volumes:
+        - configMap:
+            name: mysql-config
+          name: mysql-config
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-persistent-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: standard-rwo
