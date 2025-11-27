@@ -1,0 +1,11 @@
+{{- if .Values.webService.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.webService.name }}-config
+  labels:
+    {{- include "k8s-compliment-shop.webService.labels" . | nindent 4 }}
+data:
+  bff-service-url: {{ .Values.webService.config.bffServiceUrl | quote }}
+  ga-measurement-id: {{ .Values.webService.config.gaMeasurementId | quote }}
+{{- end }}

@@ -1,0 +1,21 @@
+{{- if .Values.productService.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.productService.name }}
+  labels:
+    {{- include "k8s-compliment-shop.productService.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.productService.service.type }}
+  ports:
+  - port: {{ .Values.productService.service.httpPort }}
+    targetPort: {{ .Values.productService.service.httpPort }}
+    protocol: TCP
+    name: http
+  - port: {{ .Values.productService.service.grpcPort }}
+    targetPort: {{ .Values.productService.service.grpcPort }}
+    protocol: TCP
+    name: grpc
+  selector:
+    app: {{ .Values.productService.name }}
+{{- end }}

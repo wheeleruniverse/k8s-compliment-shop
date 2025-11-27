@@ -1,0 +1,242 @@
+# Global settings
+global:
+  nameOverride: ""
+  fullnameOverride: ""
+
+# Web Service configuration
+webService:
+  enabled: true
+  name: web-service
+  replicaCount: 2
+
+  image:
+    repository: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/web-service
+    tag: v6
+    pullPolicy: Always
+
+  service:
+    type: LoadBalancer
+    port: 8080
+    targetPort: 8080
+    sessionAffinity: ClientIP
+    sessionAffinityTimeout: 10800
+
+  config:
+    bffServiceUrl: "http://bff-service:8082/graphql"
+    gaMeasurementId: "G-BC83RF4L1J"
+
+  env:
+    aspnetcoreEnvironment: "Production"
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 30
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  labels:
+    tier: frontend
+
+# BFF Service configuration
+bffService:
+  enabled: true
+  name: bff-service
+  replicaCount: 2
+
+  image:
+    repository: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/bff-service
+    tag: v4
+    pullPolicy: Always
+
+  service:
+    type: ClusterIP
+    port: 8082
+    targetPort: 8082
+
+  env:
+    aspnetcoreEnvironment: "Production"
+    aspnetcoreUrls: "http://+:8082"
+    productServiceUrl: "http://product-service:8081"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8082
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8082
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  labels:
+    tier: backend
+
+# Product Service configuration
+productService:
+  enabled: true
+  name: product-service
+  replicaCount: 2
+
+  image:
+    repository: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/product-service
+    tag: v1
+    pullPolicy: Always
+
+  service:
+    type: ClusterIP
+    httpPort: 8080
+    grpcPort: 8081
+
+  env:
+    aspnetcoreEnvironment: "Production"
+    aspnetcoreUrls: "http://+:8080"
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  labels:
+    tier: backend
+
+# MySQL configuration
+mysql:
+  enabled: true
+  name: mysql
+  replicaCount: 1
+
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 3306
+    # Headless service for StatefulSet
+    clusterIP: None
+
+  auth:
+    rootPassword: "yourpassword"
+    database: "complimentshop"
+
+  persistence:
+    enabled: true
+    storageClass: "standard-rwo"
+    size: 10Gi
+    accessMode: ReadWriteOnce
+
+  config:
+    mycnf: |
+      [mysqld]
+      # InnoDB settings
+      innodb_buffer_pool_size = 1G
+      innodb_log_file_size = 256M
+      innodb_flush_method = O_DIRECT
+
+      # Character set and collation
+      character-set-server = utf8mb4
+      collation-server = utf8mb4_unicode_ci
+
+      # Connection settings
+      max_connections = 200
+
+      # Query cache (disabled in MySQL 8.0+, but kept for reference)
+      # query_cache_size = 0
+      # query_cache_type = 0
+
+      # Logging
+      slow_query_log = 1
+      slow_query_log_file = /var/log/mysql/slow-query.log
+      long_query_time = 2
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  livenessProbe:
+    exec:
+      command:
+        - mysqladmin
+        - ping
+        - -h
+        - localhost
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
+  readinessProbe:
+    exec:
+      command:
+        - sh
+        - -c
+        - mysqladmin ping -h localhost -u root --password=$MYSQL_ROOT_PASSWORD
+    initialDelaySeconds: 10
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+  labels:
+    tier: database

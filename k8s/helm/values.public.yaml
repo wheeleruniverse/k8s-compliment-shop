@@ -1,0 +1,15 @@
+# Public values file for vendoring manifests
+# These values are safe to commit and used for rendering manifests in CI/CD
+# Real secrets should be overridden at deployment time
+
+mysql:
+  enabled: true
+  auth:
+    rootPassword: "PLACEHOLDER_REPLACE_AT_DEPLOY_TIME"
+    database: complimentshop
+  persistence:
+    enabled: true
+    size: 1Gi
+
+# All other non-sensitive values can be included here
+# or inherited from values.yaml

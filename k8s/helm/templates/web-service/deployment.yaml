@@ -1,0 +1,49 @@
+{{- if .Values.webService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.webService.name }}
+  labels:
+    {{- include "k8s-compliment-shop.webService.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.webService.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.webService.name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.webService.name }}
+        {{- with .Values.webService.labels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+      - name: {{ .Values.webService.name }}
+        image: "{{ .Values.webService.image.repository }}:{{ .Values.webService.image.tag }}"
+        imagePullPolicy: {{ .Values.webService.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.webService.service.targetPort }}
+          name: http
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: {{ .Values.webService.env.aspnetcoreEnvironment | quote }}
+        - name: BffService__Url
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.webService.name }}-config
+              key: bff-service-url
+        - name: GoogleAnalytics__MeasurementId
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.webService.name }}-config
+              key: ga-measurement-id
+        resources:
+          {{- toYaml .Values.webService.resources | nindent 10 }}
+        livenessProbe:
+          {{- toYaml .Values.webService.livenessProbe | nindent 10 }}
+        readinessProbe:
+          {{- toYaml .Values.webService.readinessProbe | nindent 10 }}
+      restartPolicy: Always
+{{- end }}

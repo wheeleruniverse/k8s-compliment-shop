@@ -1,0 +1,222 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    helm.sh/chart: k8s-compliment-shop
+    managed-by: argocd
+  labels:
+    app: bff-service
+    app.kubernetes.io/instance: k8s-compliment-shop
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-compliment-shop
+    app.kubernetes.io/part-of: k8s-compliment-shop
+    app.kubernetes.io/version: 1.0.0
+    environment: production
+    helm.sh/chart: k8s-compliment-shop-1.0.0
+    tier: backend
+  name: bff-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bff-service
+  template:
+    metadata:
+      annotations:
+        helm.sh/chart: k8s-compliment-shop
+        managed-by: argocd
+      labels:
+        app: bff-service
+        tier: backend
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8082
+            - name: ProductService__Url
+              value: http://product-service:8081
+          image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/bff-service:v4
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: bff-service
+          ports:
+            - containerPort: 8082
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    helm.sh/chart: k8s-compliment-shop
+    managed-by: argocd
+  labels:
+    app: product-service
+    app.kubernetes.io/instance: k8s-compliment-shop
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-compliment-shop
+    app.kubernetes.io/part-of: k8s-compliment-shop
+    app.kubernetes.io/version: 1.0.0
+    environment: production
+    helm.sh/chart: k8s-compliment-shop-1.0.0
+    tier: backend
+  name: product-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      annotations:
+        helm.sh/chart: k8s-compliment-shop
+        managed-by: argocd
+      labels:
+        app: product-service
+        tier: backend
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  key: connection-string
+                  name: mysql-secret
+          image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/product-service:v1
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          name: product-service
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+            - containerPort: 8081
+              name: grpc
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    helm.sh/chart: k8s-compliment-shop
+    managed-by: argocd
+  labels:
+    app: web-service
+    app.kubernetes.io/instance: k8s-compliment-shop
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: k8s-compliment-shop
+    app.kubernetes.io/part-of: k8s-compliment-shop
+    app.kubernetes.io/version: 1.0.0
+    environment: production
+    helm.sh/chart: k8s-compliment-shop-1.0.0
+    tier: frontend
+  name: web-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-service
+  template:
+    metadata:
+      annotations:
+        helm.sh/chart: k8s-compliment-shop
+        managed-by: argocd
+      labels:
+        app: web-service
+        tier: frontend
+    spec:
+      containers:
+        - env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: BffService__Url
+              valueFrom:
+                configMapKeyRef:
+                  key: bff-service-url
+                  name: web-service-config
+            - name: GoogleAnalytics__MeasurementId
+              valueFrom:
+                configMapKeyRef:
+                  key: ga-measurement-id
+                  name: web-service-config
+          image: us-central1-docker.pkg.dev/t-scarab-471016-n5/k8s-compliment-shop/web-service:v6
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+          name: web-service
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 250m
+              memory: 256Mi
+      restartPolicy: Always
