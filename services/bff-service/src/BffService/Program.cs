@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add Aspire ServiceDefaults (health checks, telemetry, service discovery)
+builder.AddServiceDefaults();
+
 // Configure Kestrel to use HTTP/1.1 for GraphQL and health checks
 builder.WebHost.ConfigureKestrel(options =>
 {
@@ -14,8 +17,11 @@ builder.WebHost.ConfigureKestrel(options =>
     });
 });
 
-// Get product service URL from environment variable or use default
-var productServiceUrl = builder.Configuration.GetValue<string>("ProductService:Url") ?? "http://localhost:8081";
+// Get product service URL from Aspire service discovery (dev) or environment variable (K8s) or use default
+var productServiceUrl = builder.Configuration.GetValue<string>("services:product-service:https:0")
+    ?? builder.Configuration.GetValue<string>("services:product-service:http:0")
+    ?? builder.Configuration.GetValue<string>("ProductService:Url")
+    ?? "http://localhost:8081";
 
 // Configure gRPC client for product-service
 builder.Services.AddSingleton(services =>
@@ -59,9 +65,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Add health checks
-builder.Services.AddHealthChecks();
-
 // Add logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -75,8 +78,8 @@ app.UseCors();
 // Map GraphQL endpoint
 app.MapGraphQL("/graphql");
 
-// Map health check endpoint
-app.MapHealthChecks("/health");
+// Map Aspire health endpoints
+app.MapDefaultEndpoints();
 
 // In development, show GraphQL Playground at root
 if (app.Environment.IsDevelopment())

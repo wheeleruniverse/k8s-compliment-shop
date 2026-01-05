@@ -118,12 +118,53 @@ A microservices-based e-commerce application for shopping compliments and positi
 
 ### Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (for services)
+- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (for Aspire local development)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
 - [Helm](https://helm.sh/docs/intro/install/)
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install) (for GKE)
 - [grpcurl](https://github.com/fullstorydev/grpcurl) (for testing gRPC)
+
+### Local Development with .NET Aspire (Recommended)
+
+**The fastest way to run all services locally is using .NET Aspire!**
+
+.NET Aspire provides a unified orchestration experience for local development with:
+- 🚀 One command to start the entire microservices stack
+- 🔍 Built-in observability dashboard with logs, traces, and metrics
+- 🔗 Automatic service discovery (no hardcoded URLs)
+- 📊 Real-time health monitoring
+- 🔄 Hot reload support
+
+**Run the application:**
+
+```bash
+cd aspire/ComplimentShop.AppHost
+dotnet run
+```
+
+This will:
+1. ✅ Start MySQL in a Docker container
+2. ✅ Start all microservices in the correct order
+3. ✅ Configure service discovery automatically
+4. ✅ Open the Aspire Dashboard for monitoring
+
+**Access the application:**
+- **Web UI**: `http://localhost:8080` (or port shown in dashboard)
+- **Aspire Dashboard**: `http://localhost:15888` (monitoring & logs)
+- **GraphQL Playground**: `http://localhost:8082/graphql`
+
+**Benefits:**
+- No manual service startup - everything orchestrated automatically
+- See logs from all services in one place with color-coding
+- Distributed tracing shows requests flowing through services
+- Health checks displayed in real-time
+- Hot reload - code changes apply without full restart
+
+**Note:** Aspire is for **local development only**. Production deployments continue to use Kubernetes (see below).
+
+---
 
 ### Automated Deployment (Recommended)
 

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -19,12 +19,16 @@
     <PackageReference Include="Google.Protobuf" Version="3.25.1" />
 
     <!-- Health Checks -->
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Proto files for gRPC client generation -->
     <Protobuf Include="Protos/product.proto" GrpcServices="Client" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../../aspire/ComplimentShop.ServiceDefaults/ComplimentShop.ServiceDefaults.csproj" />
   </ItemGroup>
 
 </Project>
